@@ -1,10 +1,3 @@
-//
-//  SSOTPPinView.swift
-//  SSOTPPinView
-//
-//  Created by Pranay Patel on 03/11/23.
-//
-
 import SwiftUI
 import Combine
 
@@ -48,6 +41,11 @@ public struct SSOTPPinView: View {
     ///
     /// This variable is used to provide a callback with the updated OTP code. The default is an empty closure.
     var completion: ((String) -> Void)
+    
+    /// A state property that tracks the current input position.
+    ///
+    /// This is used to determine which field should be highlighted as the currently active field.
+    @State private var currentPosition: Int = 0
 
     
     //MARK: State Object
@@ -58,6 +56,9 @@ public struct SSOTPPinView: View {
     ///
     /// This property is used to manage and track which field is currently focused.
     @FocusState private var focusedField: FocusField?
+    
+    /// A state property that tracks whether the keyboard is currently active.
+    @State private var isKeyboardActive: Bool = false
     
     //MARK: Observed Object
     
@@ -119,16 +120,38 @@ public struct SSOTPPinView: View {
             .task {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.focusedField = .field
+                    // Make sure the current position is updated when the keyboard is shown initially
+                    if viewModel.otpCode.count == numberOfCount {
+                        currentPosition = 0
+                    } else {
+                        currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
+                    }
                 }
             }
             .modify {
                 if #available(iOS 17.0, *) {
                     $0.onChange(of: viewModel.otpCode, { oldValue, newValue in
                         completion(newValue)
+                        // Update current position based on the OTP code length
+                        if newValue.count == numberOfCount {
+                            // If the OTP code is complete, reset the current position to indicate no selection
+                            currentPosition = -1
+                        } else {
+                            // Otherwise, highlight the next position where input will go
+                            currentPosition = min(newValue.count, numberOfCount - 1)
+                        }
                     })
                 } else {
                     $0.onChange(of: viewModel.otpCode, perform: { newValue in
                         completion(newValue)
+                        // Update current position based on the OTP code length
+                        if newValue.count == numberOfCount {
+                            // If the OTP code is complete, reset the current position to indicate no selection
+                            currentPosition = -1
+                        } else {
+                            // Otherwise, highlight the next position where input will go
+                            currentPosition = min(newValue.count, numberOfCount - 1)
+                        }
                     })
                 }
             }
@@ -168,12 +191,26 @@ public struct SSOTPPinView: View {
             .task {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.focusedField = .field
+                    // Make sure the current position is updated when the keyboard is shown initially
+                    if viewModel.otpCode.count == numberOfCount {
+                        currentPosition = 0
+                    } else {
+                        currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
+                    }
                 }
             }
             .modify {
                 if #available(iOS 17.0, *) {
                     $0.onChange(of: viewModel.otpCode, { oldValue, newValue in
                         completion(newValue)
+                        // Update current position based on the OTP code length
+                        if newValue.count == numberOfCount {
+                            // If the OTP code is complete, reset the current position to indicate no selection
+                            currentPosition = -1
+                        } else {
+                            // Otherwise, highlight the next position where input will go
+                            currentPosition = min(newValue.count, numberOfCount - 1)
+                        }
                         if viewModel.otpCode.count == numberOfCount {
                             focusedField = nil
                         }
@@ -181,6 +218,14 @@ public struct SSOTPPinView: View {
                 } else {
                     $0.onChange(of: viewModel.otpCode, perform: { newValue in
                         completion(newValue)
+                        // Update current position based on the OTP code length
+                        if newValue.count == numberOfCount {
+                            // If the OTP code is complete, reset the current position to indicate no selection
+                            currentPosition = -1
+                        } else {
+                            // Otherwise, highlight the next position where input will go
+                            currentPosition = min(newValue.count, numberOfCount - 1)
+                        }
                         if viewModel.otpCode.count == numberOfCount {
                             focusedField = nil
                         }
@@ -231,40 +276,71 @@ public struct SSOTPPinView: View {
                     .foregroundStyle(notifier.textColor)
                     .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
                     .lineLimit(1)
+                    .background(notifier.backgroundColor)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(notifier.lineColor, lineWidth: notifier.lineWidth)
+                            .stroke(currentPosition < 0 || viewModel.otpCode.count == numberOfCount ? notifier.lineColor : notifier.selectedLineColor, lineWidth: notifier.lineWidth)
                     )
                     .onTapGesture {
+                        self.focusedField = .field
                         if viewModel.otpCode.count == numberOfCount {
-                            self.focusedField = .field
+                            currentPosition = 0
+                        } else {
+                            currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
                         }
                     }
             } else {
                 HStack {
                     ForEach(0..<self.numberOfCount, id: \.self) { index in
                         ZStack {
-                            Text(viewModel.getOTPPin(at: index))
+                            // Background for all field types
+                            if type == .circle {
+                                Circle()
+                                    .fill(notifier.backgroundColor)
+                                    .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
+                            } else if type == .box {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .fill(notifier.backgroundColor)
+                                    .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
+                            } else if type == .underline {
+                                Rectangle()
+                                    .fill(notifier.backgroundColor)
+                                    .frame(width: notifier.strokeWidth, height: notifier.strokeHeight - notifier.lineWidth)
+                                    .padding(.bottom, notifier.lineWidth)
+                            }
+                            
+                Text(viewModel.getOTPPin(at: index))
                                 .font(notifier.font)
                                 .fontWeight(notifier.fontWeight)
                                 .foregroundStyle(notifier.textColor)
                                 .onTapGesture {
+                                    self.focusedField = .field
                                     if viewModel.otpCode.count == numberOfCount {
-                                        self.focusedField = .field
+                                        currentPosition = 0
+                                    } else {
+                                        currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
                                     }
                                 }
+                                
                             if type == .circle {
                                 Circle()
-                                    .stroke(notifier.lineColor, lineWidth: notifier.lineWidth)
+                                    .stroke(index == currentPosition && currentPosition >= 0 ? notifier.selectedLineColor : notifier.lineColor, lineWidth: notifier.lineWidth)
                                     .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
                                     .onTapGesture {
+                                        self.focusedField = .field
+                                        // When tapping on any field, set current position based on the field's index
+                                        // This allows editing from specific positions
                                         if viewModel.otpCode.count == numberOfCount {
-                                            self.focusedField = .field
+                                            // If OTP is complete, we are starting editing from the beginning
+                                            currentPosition = 0
+                                        } else {
+                                            // Otherwise, keep the current input position
+                                            currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
                                         }
                                     }
                             } else if type == .box {
                                 RoundedRectangle(cornerRadius: 5)
-                                    .stroke(notifier.lineColor, lineWidth: notifier.lineWidth)
+                                    .stroke(index == currentPosition && currentPosition >= 0 ? notifier.selectedLineColor : notifier.lineColor, lineWidth: notifier.lineWidth)
                                     .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
                                     .onTapGesture {
                                         if viewModel.otpCode.count == numberOfCount {
@@ -275,7 +351,7 @@ public struct SSOTPPinView: View {
                                 Rectangle()
                                     .frame(height: notifier.lineWidth)
                                     .frame(width: notifier.strokeWidth)
-                                    .foregroundStyle(notifier.lineColor)
+                                    .foregroundStyle(index == currentPosition && currentPosition >= 0 ? notifier.selectedLineColor : notifier.lineColor)
                                     .padding(.trailing, 5)
                                     .padding(.leading, 5)
                                     .padding(.top, notifier.strokeHeight)
@@ -363,7 +439,15 @@ extension SSOTPPinView {
         notifier.strokeHeight = height
         return self
     }
-
+    
+    /// Sets the background color of each OTP input field.
+    ///
+    /// - Parameter color: The background color to apply to each input field.
+    /// - Returns: The `SSOTPPinView` instance with the updated background color.
+    public func backgroundColor(_ color: Color) -> Self {
+        notifier.backgroundColor = color
+        return self
+    }
 }
 
 // MARK: - Custom Keyboard Properties
@@ -418,5 +502,13 @@ extension SSOTPPinView {
         notifier.lineColor = color
         return self
     }
-
+    
+    /// Sets the color of the line used for the currently selected OTP input field.
+    ///
+    /// - Parameter color: The color of the line for the selected field.
+    /// - Returns: The `SSOTPPinView` instance with the updated selected line color.
+    public func selectedLineColor(_ color: Color) -> Self {
+        notifier.selectedLineColor = color
+        return self
+    }
 }

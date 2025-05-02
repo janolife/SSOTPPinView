@@ -13,7 +13,8 @@ struct ContentView: View {
     
     var body: some View {
         VStack {
-            SSOTPPinView(textFieldType: .circle, numberOfCount: 5, keyboardOptions: .customRandomDigits) { newValue in
+            
+            SSOTPPinView(textFieldType: .box, numberOfCount: 6) { newValue in
                 self.otp = newValue
                 print(otp)
             }
@@ -23,6 +24,8 @@ struct ContentView: View {
             .fontWeight(.bold)
             .lineColor(.blue)
             .lineWidth(2)
+            .backgroundColor(.green)
+            .selectedLineColor(.red)
             // custom keyboard property
             .keyboardBackgroundColor(.red)
             .keyFontColor(.white)
