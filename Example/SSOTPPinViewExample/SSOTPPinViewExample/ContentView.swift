@@ -18,7 +18,7 @@ struct ContentView: View {
                 self.otp = newValue
                 print(otp)
             }
-            .isSecureTextEntry(true)
+            .isSecureTextEntry(false)
             .secureTextType(.star)
             .textColor(.black)
             .fontWeight(.bold)

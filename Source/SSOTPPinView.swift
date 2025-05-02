@@ -115,6 +115,7 @@ public struct SSOTPPinView: View {
             .tint(.blue)
             .foregroundStyle(.blue)
             .multilineTextAlignment(.center)
+            .keyboardType(getKeyboard(type: self.keyboardType))
             .onReceive(Just(viewModel.otpCode)) { _ in viewModel.limitText(numberOfCount)}
             .focused($focusedField, equals: .field)
             .task {
@@ -136,6 +137,7 @@ public struct SSOTPPinView: View {
                         if newValue.count == numberOfCount {
                             // If the OTP code is complete, reset the current position to indicate no selection
                             currentPosition = -1
+                            focusedField = nil
                         } else {
                             // Otherwise, highlight the next position where input will go
                             currentPosition = min(newValue.count, numberOfCount - 1)
@@ -148,6 +150,7 @@ public struct SSOTPPinView: View {
                         if newValue.count == numberOfCount {
                             // If the OTP code is complete, reset the current position to indicate no selection
                             currentPosition = -1
+                            focusedField = nil
                         } else {
                             // Otherwise, highlight the next position where input will go
                             currentPosition = min(newValue.count, numberOfCount - 1)
@@ -284,6 +287,8 @@ public struct SSOTPPinView: View {
                     .onTapGesture {
                         self.focusedField = .field
                         if viewModel.otpCode.count == numberOfCount {
+                            // Reset OTP code when tapping after completion
+                            viewModel.otpCode = ""
                             currentPosition = 0
                         } else {
                             currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
@@ -316,6 +321,8 @@ public struct SSOTPPinView: View {
                                 .onTapGesture {
                                     self.focusedField = .field
                                     if viewModel.otpCode.count == numberOfCount {
+                                        // Reset OTP code when tapping after completion
+                                        viewModel.otpCode = ""
                                         currentPosition = 0
                                     } else {
                                         currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
@@ -331,7 +338,8 @@ public struct SSOTPPinView: View {
                                         // When tapping on any field, set current position based on the field's index
                                         // This allows editing from specific positions
                                         if viewModel.otpCode.count == numberOfCount {
-                                            // If OTP is complete, we are starting editing from the beginning
+                                            // If OTP is complete, reset and start editing from the beginning
+                                            viewModel.otpCode = ""
                                             currentPosition = 0
                                         } else {
                                             // Otherwise, keep the current input position
@@ -343,8 +351,13 @@ public struct SSOTPPinView: View {
                                     .stroke(index == currentPosition && currentPosition >= 0 ? notifier.selectedLineColor : notifier.lineColor, lineWidth: notifier.lineWidth)
                                     .frame(width: notifier.strokeWidth, height: notifier.strokeHeight)
                                     .onTapGesture {
+                                        self.focusedField = .field
                                         if viewModel.otpCode.count == numberOfCount {
-                                            self.focusedField = .field
+                                            // Reset OTP code when tapping after completion
+                                            viewModel.otpCode = ""
+                                            currentPosition = 0
+                                        } else {
+                                            currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
                                         }
                                     }
                             } else if type == .underline {
@@ -356,8 +369,13 @@ public struct SSOTPPinView: View {
                                     .padding(.leading, 5)
                                     .padding(.top, notifier.strokeHeight)
                                     .onTapGesture {
+                                        self.focusedField = .field
                                         if viewModel.otpCode.count == numberOfCount {
-                                            self.focusedField = .field
+                                            // Reset OTP code when tapping after completion
+                                            viewModel.otpCode = ""
+                                            currentPosition = 0
+                                        } else {
+                                            currentPosition = min(viewModel.otpCode.count, numberOfCount - 1)
                                         }
                                     }
                             }

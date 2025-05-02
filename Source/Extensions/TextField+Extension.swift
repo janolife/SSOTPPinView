@@ -27,7 +27,7 @@ extension TextField {
         switch keyboardType {
         case .numberPad:
             self
-                .keyboardType(.namePhonePad)
+                .keyboardType(.numberPad)
         case .default:
             self
                 .keyboardType(.default)
